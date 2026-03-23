@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GenFiler | Estación de Auditoría</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="min-h-screen font-inter bg-slate-900 text-slate-100 flex flex-col relative">
+
+  <header class="glass-panel p-4 md:p-6 border-b border-slate-700 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+      <div>
+        <h1 class="text-2xl md:text-3xl font-black tracking-tight text-white flex items-center gap-2">
+          ESTACIÓN <span class="text-emerald-400">HÍBRIDA</span>
+        </h1>
+      </div>
+
+      <div class="flex bg-slate-800 p-1 rounded-xl border border-slate-700">
+        <button id="tab-btn-scanner" class="px-6 py-2 rounded-lg text-sm font-bold bg-emerald-500/20 text-emerald-400 transition-all">
+          1. Lector y Cámara
+        </button>
+        <button id="tab-btn-audit" class="px-6 py-2 rounded-lg text-sm font-bold text-slate-400 hover:text-slate-200 transition-all relative">
+          2. Auditoría GS1
+          <span id="badge-audit" class="hidden absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full shadow-[0_0_10px_#f43f5e]">0</span>
+        </button>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <div id="system-status" class="px-4 py-2 rounded-full bg-slate-800 text-xs font-bold text-amber-400 border border-amber-400/30 skeleton">
+          Conectando a DB...
+        </div>
+        <button id="btn-refresh-db" class="bg-slate-800 hover:bg-slate-700 text-blue-400 border border-blue-500/50 p-2 rounded-full transition-all group" title="Forzar actualización desde Google Sheets">
+          <svg class="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 overflow-hidden">
+    
+    <div id="tab-scanner" class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full transition-opacity duration-300">
+      <div class="lg:col-span-2 flex flex-col gap-6">
+        <div class="glass-panel rounded-3xl p-6 border-2 border-emerald-500/30 relative focus-within:border-emerald-400 transition-colors shadow-lg z-40">
+          <div class="flex justify-between items-end mb-2">
+            <label for="scannerInput" class="block text-emerald-400 text-sm font-bold uppercase tracking-widest">
+              Láser o Teclado
+            </label>
+            <button id="btn-camera" class="bg-slate-800 hover:bg-slate-700 text-blue-400 border border-blue-500/50 px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+              Activar Cámara
+            </button>
+          </div>
+
+          <div id="camera-container" class="hidden mb-4 rounded-xl overflow-hidden border-2 border-blue-500/50 relative bg-black">
+            <div id="reader" class="w-full"></div>
+            <button id="btn-close-camera" class="absolute top-2 right-2 bg-rose-500 text-white p-2 rounded-full z-10 shadow-lg">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+          </div>
+
+          <div class="relative">
+            <input type="text" id="scannerInput" autocomplete="off" placeholder="ESCANEE, USE CÁMARA O ESCRIBA DESCRIPCIÓN..." class="w-full bg-slate-950 border-2 border-slate-700 rounded-xl px-6 py-5 text-2xl md:text-3xl font-mono text-emerald-400 focus:outline-none focus:border-emerald-400 transition-colors shadow-inner">
+            <ul id="suggestions-box" class="absolute top-full left-0 w-full mt-2 bg-slate-800 border border-slate-600 rounded-xl shadow-2xl max-h-60 overflow-y-auto hidden z-50"></ul>
+          </div>
+        </div>
+
+        <div id="active-result" class="glass-panel rounded-3xl p-6 md:p-8 border border-slate-700 flex-1 flex flex-col justify-center items-center text-center transition-all duration-150">
+          <div class="text-slate-500/50 my-auto flex flex-col items-center">
+            <svg class="w-24 h-24 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
+            <p class="text-xl font-bold uppercase tracking-widest">Listo para escanear</p>
+          </div>
+        </div>
+      </div>
+
+      <aside class="glass-panel rounded-3xl p-6 border border-slate-700 flex flex-col h-[600px] lg:h-auto">
+        <h2 class="text-lg font-bold text-slate-300 border-b border-slate-700 pb-4 mb-4 uppercase tracking-wider">Historial</h2>
+        <div class="flex-1 overflow-y-auto pr-2" id="scan-history"></div>
+      </aside>
+    </div>
+
+    <div id="tab-audit" class="hidden flex-col gap-6 h-[75vh] animate-fade-in">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
+        <div class="glass-panel rounded-3xl border border-amber-500/30 flex flex-col h-full overflow-hidden">
+          <div class="bg-slate-900/95 backdrop-blur-md p-6 pb-4 border-b border-slate-700 z-10">
+            <div class="flex items-center gap-3 mb-2">
+              <span class="bg-amber-500 text-amber-950 px-2 py-1 rounded text-xs font-bold uppercase">Advertencia</span>
+              <h3 class="text-amber-400 font-bold text-lg">Colisiones de Códigos</h3>
+            </div>
+            <p class="text-sm text-slate-400 mb-3">Múltiples ID_PRDC apuntando al mismo código exacto.</p>
+            <div id="collision-filters" class="flex gap-2 overflow-x-auto pb-1">
+              <button class="px-4 py-1.5 rounded-lg text-[10px] md:text-xs font-bold transition-all bg-amber-500 text-amber-950 shadow-[0_0_10px_rgba(245,158,11,0.3)]" data-type="ALL">TODOS</button>
+              <button class="px-4 py-1.5 rounded-lg text-[10px] md:text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:bg-slate-700" data-type="SKU">SOLO SKU</button>
+              <button class="px-4 py-1.5 rounded-lg text-[10px] md:text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:bg-slate-700" data-type="ALU">SOLO ALU</button>
+              <button class="px-4 py-1.5 rounded-lg text-[10px] md:text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:bg-slate-700" data-type="BARCODE">SOLO BARCODE</button>
+            </div>
+          </div>
+          <div class="flex-1 overflow-y-auto p-6 bg-slate-950/50">
+            <div id="audit-duplicates" class="space-y-3">
+              <div class="text-slate-500 text-center py-4 font-bold">Analizando base de datos...</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-panel rounded-3xl border border-rose-500/30 flex flex-col h-full overflow-hidden">
+          <div class="bg-slate-900/95 backdrop-blur-md p-6 pb-4 border-b border-slate-700 z-10">
+            <div class="flex items-center gap-3 mb-2">
+              <span class="bg-rose-500 text-white px-2 py-1 rounded text-xs font-bold uppercase">Crítico</span>
+              <h3 class="text-rose-400 font-bold text-lg">Errores de Estructura GS1</h3>
+            </div>
+            <p class="text-sm text-slate-400">El dígito verificador no cumple el estándar global de empaque.</p>
+          </div>
+          <div class="flex-1 overflow-y-auto p-6 bg-slate-950/50">
+            <ul id="audit-gs1" class="text-sm space-y-3">
+              <li class="text-slate-500 text-center py-4 font-bold">Analizando GS1...</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="image-modal" class="hidden fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex justify-center items-center p-4 opacity-0 transition-opacity duration-300">
+    <button id="close-modal" class="absolute top-6 right-6 md:top-10 md:right-10 text-white bg-rose-500/80 hover:bg-rose-500 p-3 rounded-full transition-colors shadow-[0_0_15px_rgba(244,63,94,0.5)] z-10">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+    </button>
+    <div class="relative max-w-5xl max-h-[90vh] w-full h-full flex justify-center items-center">
+      <img id="modal-image" src="" class="max-w-full max-h-full rounded-2xl shadow-[0_0_40px_rgba(0,0,0,0.8)] border border-slate-700 object-contain transform scale-95 transition-transform duration-300">
+    </div>
+  </div>
+
+  <div id="edit-modal" class="hidden fixed inset-0 z-[110] bg-black/90 backdrop-blur-sm flex justify-center items-center p-2 md:p-4 transition-opacity duration-300 opacity-0">
+    <div class="glass-panel p-4 md:p-6 rounded-2xl w-full max-w-4xl border-2 border-blue-500/50 flex flex-col gap-4 shadow-[0_0_30px_rgba(59,130,246,0.3)] max-h-[95vh]">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-3 shrink-0">
+        <div>
+          <h3 class="text-xl font-bold text-blue-400">Auditoría de Producto</h3>
+          <p class="text-xs text-slate-400 font-mono mt-1" id="edit-modal-title">ID: ---</p>
+        </div>
+        <button id="btn-close-edit" class="text-slate-400 hover:text-rose-400 transition-colors">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <div class="overflow-y-auto flex-1 pr-2">
+        <form id="form-edit-product" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <input type="hidden" id="edit-id">
+          
+          <div class="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+            <div class="md:col-span-3">
+              <label class="block text-[10px] text-slate-400 font-bold uppercase mb-1">Descripción de Producto</label>
+              <input type="text" id="edit-desc" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-400 font-bold uppercase mb-1">SKU</label>
+              <input type="text" id="edit-sku" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white font-mono focus:border-blue-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-400 font-bold uppercase mb-1">ALU</label>
+              <input type="text" id="edit-alu" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white font-mono focus:border-blue-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-400 font-bold uppercase mb-1">BARCODE (EAN/UPC)</label>
+              <input type="text" id="edit-barcode" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white font-mono focus:border-blue-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-400 font-bold uppercase mb-1">Categoría</label>
+              <input type="text" id="edit-cat" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-400 font-bold uppercase mb-1">Gestión</label>
+              <input type="text" id="edit-gestion" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none">
+            </div>
+          </div>
+
+          <div class="md:col-span-3 grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+            <div>
+              <label class="block text-[10px] text-slate-400 font-bold uppercase mb-1">Unidad (UM)</label>
+              <input type="text" id="edit-um" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-400 font-bold uppercase mb-1">Peso Promedio</label>
+              <input type="number" step="0.01" id="edit-peso" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-400 font-bold uppercase mb-1">Unds x Jaba</label>
+              <input type="number" id="edit-jaba" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-400 font-bold uppercase mb-1">Layout / Zona</label>
+              <input type="text" id="edit-layout" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none">
+            </div>
+            <div class="col-span-2">
+              <label class="block text-[10px] text-slate-400 font-bold uppercase mb-1">Registro Sanitario</label>
+              <input type="text" id="edit-rsa" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white font-mono focus:border-blue-500 focus:outline-none">
+            </div>
+            <div class="col-span-2">
+              <label class="block text-[10px] text-slate-400 font-bold uppercase mb-1">Días Útiles (Caducidad)</label>
+              <input type="number" id="edit-dias" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none">
+            </div>
+            <div class="col-span-2 md:col-span-4">
+              <label class="block text-[10px] text-slate-400 font-bold uppercase mb-1">Declaración de Ingredientes</label>
+              <textarea id="edit-ingredientes" rows="3" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white font-mono focus:border-blue-500 focus:outline-none"></textarea>
+            </div>
+          </div>
+
+          <div class="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+            <h4 class="md:col-span-3 text-[10px] text-blue-400 font-bold uppercase border-b border-slate-700 pb-1">Evidencia Fotográfica</h4>
+            <div>
+              <label class="block text-[10px] text-slate-400 font-bold uppercase mb-1">Cargar Foto Frontal</label>
+              <input type="file" id="edit-img-frontal" accept="image/*" capture="environment" class="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-900/50 file:text-blue-400 hover:file:bg-blue-900 transition-all">
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-400 font-bold uppercase mb-1">Cargar Foto Posterior</label>
+              <input type="file" id="edit-img-posterior" accept="image/*" capture="environment" class="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-900/50 file:text-blue-400 hover:file:bg-blue-900 transition-all">
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-400 font-bold uppercase mb-1">Cargar Foto Etiqueta</label>
+              <input type="file" id="edit-img-etiqueta" accept="image/*" capture="environment" class="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-900/50 file:text-blue-400 hover:file:bg-blue-900 transition-all">
+            </div>
+          </div>
+
+          <div id="edit-status" class="md:col-span-3 text-center text-xs font-bold hidden py-3 rounded"></div>
+          <div class="md:col-span-3 flex justify-end gap-3 mt-4 border-t border-slate-700 pt-4">
+            <button type="button" id="btn-cancel-edit" class="px-6 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-bold transition-colors">Cancelar</button>
+            <button type="submit" id="btn-save-edit" class="px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold shadow-[0_0_15px_rgba(37,99,235,0.4)] transition-colors flex items-center gap-2">
+              Sincronizar a Google Sheets
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
