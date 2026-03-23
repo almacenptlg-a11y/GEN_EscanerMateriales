@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GenFiler | Estación de Auditoría</title>
+  <title>Escaner de MAteriales</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body class="min-h-screen font-inter bg-slate-900 text-slate-100 flex flex-col relative">
 
@@ -17,7 +17,7 @@
     <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
       <div>
         <h1 class="text-2xl md:text-3xl font-black tracking-tight text-white flex items-center gap-2">
-          ESTACIÓN <span class="text-emerald-400">HÍBRIDA</span>
+          ESCANER <span class="text-emerald-400">MATERIALES</span>
         </h1>
       </div>
 
@@ -228,7 +228,7 @@
           <div class="md:col-span-3 flex justify-end gap-3 mt-4 border-t border-slate-700 pt-4">
             <button type="button" id="btn-cancel-edit" class="px-6 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-bold transition-colors">Cancelar</button>
             <button type="submit" id="btn-save-edit" class="px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold shadow-[0_0_15px_rgba(37,99,235,0.4)] transition-colors flex items-center gap-2">
-              Sincronizar a Google Sheets
+              GUARDAR
             </button>
           </div>
         </form>
@@ -236,6 +236,6 @@
     </div>
   </div>
 
-  <script src="js/app.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
