@@ -1,0 +1,53 @@
+body {
+  margin: 0;
+  background-color: #0f172a;
+}
+
+.glass-panel {
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+  background-size: 400% 100%;
+  animation: loading 1.5s infinite ease-in-out;
+}
+
+@keyframes loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes flash-success {
+  0% { background-color: rgba(16, 185, 129, 0.3); border-color: #10b981; transform: scale(0.99); }
+  100% { background-color: rgba(30, 41, 59, 0.7); border-color: #334155; transform: scale(1); }
+}
+
+@keyframes flash-error {
+  0% { background-color: rgba(244, 63, 94, 0.3); border-color: #f43f5e; transform: scale(0.99); }
+  10% { transform: translateX(-5px); }
+  30% { transform: translateX(5px); }
+  50% { transform: translateX(-5px); }
+  100% { background-color: rgba(30, 41, 59, 0.7); border-color: #334155; transform: scale(1); }
+}
+
+.scan-success { animation: flash-success 0.4s ease-out; }
+.scan-error { animation: flash-error 0.4s ease-out; }
+
+.animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+#suggestions-box li { cursor: pointer; transition: background 0.1s; }
+#suggestions-box li:hover { background-color: #1e293b; }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+
+#reader a { display: none !important; }
+
+/* Efecto Lightbox */
+.img-zoomable { cursor: zoom-in; transition: transform 0.2s, box-shadow 0.2s; }
+.img-zoomable:hover { transform: scale(1.02); box-shadow: 0 0 15px rgba(56, 189, 248, 0.4); border-color: #38bdf8; }
