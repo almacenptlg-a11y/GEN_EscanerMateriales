@@ -1,53 +1,195 @@
+:root {
+  --corp-blue: #2563eb;
+  --corp-indigo: #4f46e5;
+  --status-emerald: #059669;
+  --status-rose: #e11d48;
+}
+
 body {
   margin: 0;
-  background-color: #0f172a;
+  /* Removed manual background-color here because Tailwind handles it (bg-slate-50 dark:bg-slate-950) */
+  background-image: none;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.glass-panel {
-  background: rgba(30, 41, 59, 0.7);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+/* Hard override for dark mode background to guarantee root color outside the body tag bounce area */
+html.dark {
+  background-color: #020617; /* slate-950 */
 }
 
+/* Base Utility Animations */
 .skeleton {
-  background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
   background-size: 400% 100%;
   animation: loading 1.5s infinite ease-in-out;
 }
-
+html.dark .skeleton {
+  background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+  background-size: 400% 100%;
+}
 @keyframes loading {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 @keyframes flash-success {
-  0% { background-color: rgba(16, 185, 129, 0.3); border-color: #10b981; transform: scale(0.99); }
-  100% { background-color: rgba(30, 41, 59, 0.7); border-color: #334155; transform: scale(1); }
+  0% {
+    background-color: rgba(16, 185, 129, 0.1);
+    border-color: var(--status-emerald);
+    transform: scale(0.98);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  100% {
+    background-color: transparent;
+    border-color: transparent;
+    transform: scale(1);
+  }
 }
 
 @keyframes flash-error {
-  0% { background-color: rgba(244, 63, 94, 0.3); border-color: #f43f5e; transform: scale(0.99); }
-  10% { transform: translateX(-5px); }
-  30% { transform: translateX(5px); }
-  50% { transform: translateX(-5px); }
-  100% { background-color: rgba(30, 41, 59, 0.7); border-color: #334155; transform: scale(1); }
+  0% {
+    background-color: rgba(225, 29, 72, 0.1);
+    border-color: var(--status-rose);
+    transform: scale(0.98);
+  }
+  25% {
+    transform: translateX(-6px);
+  }
+  50% {
+    transform: translateX(6px);
+  }
+  75% {
+    transform: translateX(-6px);
+  }
+  100% {
+    background-color: transparent;
+    border-color: transparent;
+    transform: scale(1) translateX(0);
+  }
 }
 
-.scan-success { animation: flash-success 0.4s ease-out; }
-.scan-error { animation: flash-error 0.4s ease-out; }
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
-.animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
 
-#suggestions-box li { cursor: pointer; transition: background 0.1s; }
-#suggestions-box li:hover { background-color: #1e293b; }
+.scan-success {
+  animation: flash-success 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+.scan-error {
+  animation: flash-error 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
 
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+.animate-fade-in {
+  animation: pop-in 0.35s cubic-bezier(0.175, 0.885, 0.32, 1);
+}
+.animate-slide-up {
+  animation: slide-up 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
 
-#reader a { display: none !important; }
+#suggestions-box li {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 12px 20px;
+}
+#suggestions-box li:hover {
+  background-color: #eff6ff;
+  border-left: 4px solid var(--corp-blue);
+}
+html.dark #suggestions-box li:hover {
+  background-color: #1e3a8a;
+  border-left: 4px solid #3b82f6;
+}
 
-/* Efecto Lightbox */
-.img-zoomable { cursor: zoom-in; transition: transform 0.2s, box-shadow 0.2s; }
-.img-zoomable:hover { transform: scale(1.02); box-shadow: 0 0 15px rgba(56, 189, 248, 0.4); border-color: #38bdf8; }
+/* Custom clean scrollbar for both themes */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+html.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+html.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Hide scrollbar for inline carousels */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+#reader {
+  border-radius: 1rem;
+  overflow: hidden;
+}
+#reader video {
+  object-fit: cover !important;
+  border-radius: 1rem;
+}
+#reader a {
+  display: none !important;
+}
+
+/* Image zooming mechanics */
+.img-zoomable {
+  cursor: zoom-in;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+    box-shadow 0.3s, border-color 0.3s;
+}
+.img-zoomable:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  position: relative;
+  border-color: var(--corp-blue);
+}
+html.dark .img-zoomable:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+/* Nav Link active states */
+.nav-active {
+  color: var(--corp-blue) !important;
+}
+.nav-active svg {
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 6px rgba(37, 99, 235, 0.3));
+}
