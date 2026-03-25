@@ -40,8 +40,8 @@ class ScannerStation {
     this.rawDataset = [];
     this.duplicates = [];
     this.gs1Errors = [];
-
-    // Fallback de seguridad para AudioContext en navegadores antiguos
+    this.currentUser = null; // Nuevo estado de usuario
+    
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     this.audioCtx = AudioContext ? new AudioContext() : null;
 
@@ -49,10 +49,73 @@ class ScannerStation {
     this.isCameraActive = false;
     this.activeCollisionFilter = "ALL";
 
+    // 1. Verificamos la sesión antes de cargar la app
+    this.checkAuth();
+    
+    // 2. Cargamos el resto si pasa la validación
     this.setupThemeToggle();
     this.init();
   }
 
+  // ==========================================
+  // GESTIÓN DE SESIÓN (INTEGRACIÓN GENAPPS)
+  // ==========================================
+  checkAuth() {
+    // IMPORTANTE: Asegúrate de que el Frontend de GenApps guarde la sesión bajo esta misma llave ('genapps_session')
+    const sessionRaw = localStorage.getItem('genapps_session') || sessionStorage.getItem('genapps_session');
+    
+    if (!sessionRaw) {
+      // Acceso Denegado: Destruimos la UI y forzamos el regreso al HUB
+      document.body.innerHTML = `
+        <div class="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6 text-center transition-colors">
+          <div class="bg-white dark:bg-slate-900 p-8 rounded-[2rem] shadow-xl border border-slate-200 dark:border-slate-800 max-w-sm w-full">
+            <div class="w-20 h-20 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            </div>
+            <h1 class="text-2xl font-black text-slate-900 dark:text-white tracking-widest uppercase mb-2">Acceso Restringido</h1>
+            <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">Debes iniciar sesión desde el HUB Central para acceder a la Estación de Materiales.</p>
+            <button onclick="window.location.href='../index.html'" class="w-full px-6 py-4 bg-blue-600 text-white font-black uppercase tracking-widest text-xs rounded-2xl shadow-lg hover:bg-blue-700 active:scale-95 transition-all">
+              Volver al Login
+            </button>
+          </div>
+        </div>
+      `;
+      throw new Error("Violación de seguridad: Intento de acceso sin token GenApps.");
+    }
+
+    try {
+      this.currentUser = JSON.parse(sessionRaw);
+      
+      // Renderizar datos del usuario en la UI
+      const avatarEl = document.getElementById("user-avatar");
+      const nameEl = document.getElementById("user-name");
+      const roleEl = document.getElementById("user-role");
+
+      if (avatarEl && nameEl && this.currentUser.nombre) {
+        const nameParts = this.currentUser.nombre.split(" ");
+        // Obtener iniciales (ej: Juan Perez -> JP)
+        const init1 = nameParts[0].charAt(0).toUpperCase();
+        const init2 = nameParts.length > 1 ? nameParts[1].charAt(0).toUpperCase() : "";
+        
+        avatarEl.innerText = `${init1}${init2}`;
+        nameEl.innerText = nameParts[0];
+        roleEl.innerText = this.currentUser.rol || "Operador";
+      }
+
+      // (Opcional) Validación de permisos por Rol:
+      // if (this.currentUser.rol !== 'ADMIN' && !this.currentUser.permisos.includes('MATERIALES')) {
+      //   alert("No tienes permisos para esta área.");
+      //   window.location.href = '../index.html';
+      // }
+
+    } catch(e) {
+      console.error("Error parseando la sesión de GenApps", e);
+    }
+  }
+
+  // ==========================================
+  // SINCRONIZACIÓN DE TEMA GLOBAL
+  // ==========================================
   setupThemeToggle() {
     const btnTheme = document.getElementById("btn-theme-toggle");
     if (!btnTheme) return;
@@ -64,10 +127,10 @@ class ScannerStation {
       const html = document.documentElement;
       if (html.classList.contains("dark")) {
         html.classList.remove("dark");
-        localStorage.setItem("genfiler_theme", "light");
+        localStorage.setItem("genapps_theme", "light"); // Llave unificada
       } else {
         html.classList.add("dark");
-        localStorage.setItem("genfiler_theme", "dark");
+        localStorage.setItem("genapps_theme", "dark"); // Llave unificada
       }
     });
   }
