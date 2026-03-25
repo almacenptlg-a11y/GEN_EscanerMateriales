@@ -7,15 +7,12 @@
   <title>HUB Materiales</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
+
   <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {}
-      }
-    }
-    // Prevent FOUC: apply dark mode immediately if saved in localStorage
-    if (localStorage.getItem('genfiler_theme') === 'dark' || (!('genfiler_theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    tailwind.config = { darkMode: 'class', theme: { extend: {} } }
+    // Sincronización Global de Tema con GenApps HUB
+    const savedTheme = localStorage.getItem('genapps_theme') || localStorage.getItem('theme');
+    if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
@@ -24,64 +21,41 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <link rel="stylesheet" href="style.css">
-  <style>
-    .pb-safe {
-      padding-bottom: env(safe-area-inset-bottom, 20px);
-    }
-  </style>
+  <style>.pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }</style>
 </head>
-
 <body class="min-h-screen font-inter bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 flex flex-col relative pb-20 md:pb-0 overflow-x-hidden transition-colors duration-300">
 
-  <!-- Floating Search Header -->
   <header class="sticky top-0 z-50 bg-white/90 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800/60 p-4 md:p-6 shadow-sm transition-colors duration-300">
     <div class="max-w-4xl mx-auto flex flex-col gap-4">
-
-      <!-- Top Bar: Title & Status -->
+      
       <div class="flex justify-between items-center">
         <h1 class="text-xl md:text-2xl font-black tracking-tighter text-slate-900 dark:text-white flex items-center gap-2 transition-colors">
-          <svg class="w-6 h-6 text-blue-600 dark:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"></path>
-          </svg>
+          <svg class="w-6 h-6 text-blue-600 dark:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"></path></svg>
           HUB <span class="text-blue-600 dark:text-blue-500">MATERIALES</span>
         </h1>
+        
         <div class="flex items-center gap-2 md:gap-3">
+          
+          <div id="user-profile-badge" class="hidden md:flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-xl shadow-sm transition-colors">
+            <div class="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-400 font-black text-[10px] uppercase shadow-inner" id="user-avatar">?</div>
+            <div class="flex flex-col">
+              <span class="text-[10px] font-black text-slate-700 dark:text-slate-200 leading-none uppercase tracking-wider" id="user-name">Cargando...</span>
+              <span class="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest" id="user-role">---</span>
+            </div>
+          </div>
+
           <div id="system-status" class="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] uppercase tracking-widest font-bold text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 skeleton transition-colors">
             Iniciando
           </div>
-          <!-- Theme Switcher Header -->
           <button id="btn-theme-toggle" class="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 p-2 rounded-xl transition-all shadow-sm group">
-            <svg class="w-4 h-4 hidden dark:block group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
-            </svg>
-            <svg class="w-4 h-4 block dark:hidden group-hover:-rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
-            </svg>
+            <svg class="w-4 h-4 hidden dark:block group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+            <svg class="w-4 h-4 block dark:hidden group-hover:-rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
           </button>
-          <!-- Refresh -->
           <button id="btn-refresh-db" class="hidden md:flex bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-blue-600 dark:text-blue-400 border border-slate-200 dark:border-slate-600 p-2 rounded-xl transition-all shadow-sm group" title="Sincronizar Datos">
-            <svg class="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-            </svg>
+            <svg class="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
           </button>
         </div>
       </div>
-
-      <!-- Search Input -->
-      <div class="relative w-full group drop-shadow-sm dark:drop-shadow-lg">
-        <input type="text" id="scannerInput" autocomplete="off" placeholder="ESCANEE O BUSQUE REFERENCIA..." class="w-full bg-slate-100 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700/80 focus:border-blue-500 dark:focus:border-blue-500 focus:bg-white dark:focus:bg-slate-950 rounded-2xl pl-5 pr-14 py-4 text-sm md:text-lg font-mono font-bold text-blue-700 dark:text-blue-400 focus:outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-sans placeholder:font-semibold shadow-inner">
-
-        <button id="btn-camera" class="absolute right-2.5 top-1/2 -translate-y-1/2 p-2.5 bg-blue-50 dark:bg-blue-600/10 hover:bg-blue-600 text-blue-600 dark:text-blue-400 hover:text-white rounded-xl transition-all border border-blue-200 dark:border-blue-500/20 active:scale-95">
-          <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
-          </svg>
-        </button>
-
-        <ul id="suggestions-box" class="absolute top-full left-0 w-full mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl shadow-xl max-h-60 overflow-y-auto hidden z-[60] divide-y divide-slate-100 dark:divide-slate-700/50 transition-colors"></ul>
-      </div>
-
-    </div>
-  </header>
 
   <main class="flex-1 w-full max-w-4xl mx-auto p-4 md:p-6 flex flex-col md:flex-row gap-6">
 
