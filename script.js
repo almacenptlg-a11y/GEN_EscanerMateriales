@@ -40,8 +40,8 @@ class ScannerStation {
     this.rawDataset = [];
     this.duplicates = [];
     this.gs1Errors = [];
-    this.currentUser = null; // Nuevo estado de usuario
-    
+    this.currentUser = null;
+
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     this.audioCtx = AudioContext ? new AudioContext() : null;
 
@@ -49,73 +49,102 @@ class ScannerStation {
     this.isCameraActive = false;
     this.activeCollisionFilter = "ALL";
 
-    // 1. Verificamos la sesión antes de cargar la app
+    // Modificamos el ciclo de vida: NO arrancamos init() inmediatamente.
+    // Primero, pedimos la autenticación al Padre a través del puente.
     this.checkAuth();
-    
-    // 2. Cargamos el resto si pasa la validación
-    this.setupThemeToggle();
-    this.init();
   }
 
   // ==========================================
-  // GESTIÓN DE SESIÓN (INTEGRACIÓN GENAPPS)
+  // GESTIÓN DE SESIÓN (MICRO-FRONTEND BRIDGE)
   // ==========================================
   checkAuth() {
-    // IMPORTANTE: Asegúrate de que el Frontend de GenApps guarde la sesión bajo esta misma llave ('genapps_session')
-    const sessionRaw = localStorage.getItem('genapps_session') || sessionStorage.getItem('genapps_session');
-    
-    if (!sessionRaw) {
-      // Acceso Denegado: Destruimos la UI y forzamos el regreso al HUB
-      document.body.innerHTML = `
-        <div class="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6 text-center transition-colors">
-          <div class="bg-white dark:bg-slate-900 p-8 rounded-[2rem] shadow-xl border border-slate-200 dark:border-slate-800 max-w-sm w-full">
-            <div class="w-20 h-20 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-            </div>
-            <h1 class="text-2xl font-black text-slate-900 dark:text-white tracking-widest uppercase mb-2">Acceso Restringido</h1>
-            <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">Debes iniciar sesión desde el HUB Central para acceder a la Estación de Materiales.</p>
-            <button onclick="window.location.href='../index.html'" class="w-full px-6 py-4 bg-blue-600 text-white font-black uppercase tracking-widest text-xs rounded-2xl shadow-lg hover:bg-blue-700 active:scale-95 transition-all">
-              Volver al Login
-            </button>
-          </div>
-        </div>
-      `;
-      throw new Error("Violación de seguridad: Intento de acceso sin token GenApps.");
-    }
-
-    try {
-      this.currentUser = JSON.parse(sessionRaw);
+    // Detectamos si la app está dentro de un Iframe
+    if (window !== window.top) {
       
-      // Renderizar datos del usuario en la UI
+      // Creamos el receptor del mensaje del Padre
+      const authListener = (event) => {
+        if (event.data && event.data.action === 'SYNC_SESSION') {
+          window.removeEventListener('message', authListener); // Destruimos el listener
+          
+          if (event.data.session) {
+            this.processSession(event.data.session);
+            
+            // Sincronizar el tema que dictó el padre
+            if (event.data.theme === 'dark') document.documentElement.classList.add('dark');
+            else document.documentElement.classList.remove('dark');
+            
+            // Arrancamos la aplicación
+            this.setupThemeToggle();
+            this.init(); 
+          } else {
+            this.showAccessDenied();
+          }
+        }
+      };
+      
+      window.addEventListener('message', authListener);
+      
+      // Lanzamos la petición de sesión al Padre
+      window.parent.postMessage({ action: 'REQUEST_SESSION' }, '*');
+
+    } else {
+      // Modo Standalone (Si alguien entra a la URL directa sin Iframe)
+      const sessionRaw = localStorage.getItem('genapps_session');
+      if (sessionRaw) {
+        this.processSession(sessionRaw);
+        this.setupThemeToggle();
+        this.init();
+      } else {
+        this.showAccessDenied();
+      }
+    }
+  }
+
+  processSession(sessionRaw) {
+    try {
+      this.currentUser = typeof sessionRaw === 'string' ? JSON.parse(sessionRaw) : sessionRaw;
+      
+      // Renderizamos la "Ficha de Usuario" en el header de Materiales
       const avatarEl = document.getElementById("user-avatar");
       const nameEl = document.getElementById("user-name");
       const roleEl = document.getElementById("user-role");
 
       if (avatarEl && nameEl && this.currentUser.nombre) {
         const nameParts = this.currentUser.nombre.split(" ");
-        // Obtener iniciales (ej: Juan Perez -> JP)
         const init1 = nameParts[0].charAt(0).toUpperCase();
         const init2 = nameParts.length > 1 ? nameParts[1].charAt(0).toUpperCase() : "";
         
         avatarEl.innerText = `${init1}${init2}`;
         nameEl.innerText = nameParts[0];
         roleEl.innerText = this.currentUser.rol || "Operador";
+        
+        // Revelar badge
+        const badge = document.getElementById("user-profile-badge");
+        if (badge) {
+          badge.classList.remove("hidden");
+          badge.classList.add("flex");
+        }
       }
-
-      // (Opcional) Validación de permisos por Rol:
-      // if (this.currentUser.rol !== 'ADMIN' && !this.currentUser.permisos.includes('MATERIALES')) {
-      //   alert("No tienes permisos para esta área.");
-      //   window.location.href = '../index.html';
-      // }
-
-    } catch(e) {
+    } catch (e) {
       console.error("Error parseando la sesión de GenApps", e);
+      this.showAccessDenied();
     }
   }
 
-  // ==========================================
-  // SINCRONIZACIÓN DE TEMA GLOBAL
-  // ==========================================
+  showAccessDenied() {
+    document.body.innerHTML = `
+      <div class="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6 text-center transition-colors">
+        <div class="bg-white dark:bg-slate-900 p-8 rounded-[2rem] shadow-xl border border-slate-200 dark:border-slate-800 max-w-sm w-full">
+          <div class="w-20 h-20 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+          </div>
+          <h1 class="text-2xl font-black text-slate-900 dark:text-white tracking-widest uppercase mb-2">Acceso Restringido</h1>
+          <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">Debes iniciar sesión desde el HUB Central para acceder a la Estación de Materiales.</p>
+        </div>
+      </div>
+    `;
+  }
+
   setupThemeToggle() {
     const btnTheme = document.getElementById("btn-theme-toggle");
     if (!btnTheme) return;
@@ -125,15 +154,24 @@ class ScannerStation {
       setTimeout(() => btnTheme.classList.remove("scale-90"), 200);
 
       const html = document.documentElement;
+      let newTheme = 'light';
+
       if (html.classList.contains("dark")) {
         html.classList.remove("dark");
-        localStorage.setItem("genapps_theme", "light"); // Llave unificada
+        localStorage.setItem("genapps_theme", "light");
       } else {
         html.classList.add("dark");
-        localStorage.setItem("genapps_theme", "dark"); // Llave unificada
+        localStorage.setItem("genapps_theme", "dark");
+        newTheme = 'dark';
+      }
+
+      // Si estamos en Iframe, avisarle al HUB Principal que cambie de tema también
+      if (window !== window.top) {
+        window.parent.postMessage({ action: 'TOGGLE_THEME', theme: newTheme }, '*');
       }
     });
   }
+
 
   async init(forceRefresh = false) {
     try {
