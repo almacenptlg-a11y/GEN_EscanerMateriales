@@ -701,6 +701,16 @@ class ScannerStation {
 
     input.addEventListener("input", (e) => {
       const val = e.target.value.trim().toLowerCase();
+
+const btnScanner = document.getElementById("tab-btn-scanner");
+      if (btnScanner && !btnScanner.classList.contains("text-blue-600") && !btnScanner.classList.contains("dark:text-blue-400")) {
+        btnScanner.click();
+      }
+
+      if (val.length < 2) {
+        suggBox.classList.add("hidden");
+        return;
+      }
       
       // Reiniciar foco en cada nueva letra escrita
       currentFocus = -1;
