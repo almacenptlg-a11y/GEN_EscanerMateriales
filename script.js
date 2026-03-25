@@ -58,89 +58,85 @@ class ScannerStation {
   // GESTIÓN DE SESIÓN (MICRO-FRONTEND BRIDGE)
   // ==========================================
   checkAuth() {
-    // Detectamos si la app está encapsulada dentro del Iframe del HUB
-    if (window !== window.top) {
+    // Escuchar activamente los mensajes del HUB Padre (GenApps)
+    window.addEventListener('message', (event) => {
+      const { type, user, theme } = event.data || {};
       
-      // Temporizador de seguridad: Si el HUB padre no responde en 3 segundos, bloqueamos
-      const timeoutId = setTimeout(() => {
-        console.error("El HUB Central no respondió a la solicitud de sesión.");
-        this.showAccessDenied();
-      }, 3000);
+      // 1. Sincronización en vivo del tema
+      if (type === 'THEME_UPDATE') {
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+      }
 
-      // Creamos el receptor que espera la respuesta del HUB Padre
-      const authListener = (event) => {
-        if (event.data && event.data.action === 'SYNC_SESSION') {
-          // Si el padre responde, cancelamos la guillotina del Timeout
-          clearTimeout(timeoutId); 
-          window.removeEventListener('message', authListener); 
+      // 2. Recepción de la Sesión y Arranque del Sistema
+      if (type === 'SESSION_SYNC' && user) {
+        console.log("HUB Materiales: Sesión recibida del HUB Padre.");
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+        
+        // Guardamos en estado y en SessionStorage como hace su hermano "Temperaturas"
+        this.currentUser = user;
+        sessionStorage.setItem('moduloUser', JSON.stringify(user));
+        
+        // Actualizamos la UI del Perfil de Usuario
+        const avatarEl = document.getElementById("user-avatar");
+        const nameEl = document.getElementById("user-name");
+        const roleEl = document.getElementById("user-role");
+
+        if (avatarEl && nameEl && this.currentUser.nombre) {
+          const nameParts = this.currentUser.nombre.split(" ");
+          const init1 = nameParts[0].charAt(0).toUpperCase();
+          const init2 = nameParts.length > 1 ? nameParts[1].charAt(0).toUpperCase() : "";
           
-          if (event.data.session) {
-            this.processSession(event.data.session);
-            
-            // Sincronizar el tema que dictó el padre
-            if (event.data.theme === 'dark') document.documentElement.classList.add('dark');
-            else document.documentElement.classList.remove('dark');
-            
-            // Arrancamos la interfaz de la aplicación
-            this.setupThemeToggle();
-            this.init(); 
-          } else {
-            // El padre respondió, pero no hay sesión guardada
-            this.showAccessDenied();
+          avatarEl.innerText = `${init1}${init2}`;
+          nameEl.innerText = nameParts[0];
+          roleEl.innerText = this.currentUser.rol || "Operador";
+          
+          const badge = document.getElementById("user-profile-badge");
+          if (badge) {
+            badge.classList.remove("hidden");
+            badge.classList.add("flex");
           }
         }
-      };
-      
-      window.addEventListener('message', authListener);
-      
-      // Lanzamos la petición de auxilio al HUB Padre
-      window.parent.postMessage({ action: 'REQUEST_SESSION' }, '*');
 
+        // Arrancamos la aplicación ahora que tenemos sesión
+        this.setupThemeToggle();
+        this.init();
+      }
+    });
+
+    // 3. Inicio del Ciclo de Vida
+    // Si ya teníamos la sesión guardada temporalmente (por un recargo de iframe)
+    const savedUser = sessionStorage.getItem('moduloUser');
+    if (savedUser) {
+      console.log("HUB Materiales: Sesión recuperada desde caché local.");
+      this.currentUser = JSON.parse(savedUser);
+      // El renderizado de avatar se podría extraer a un método, pero por seguridad esperamos la señal del padre.
+    }
+
+    // Le decimos al Padre que ya estamos listos para recibir los datos
+    if (window !== window.top) {
+      window.parent.postMessage({ type: 'MODULO_LISTO' }, '*');
+      
+      // Timeout de seguridad si el padre no responde
+      setTimeout(() => {
+        if (!this.currentUser) {
+          console.error("HUB Materiales: El HUB Central no autorizó la sesión.");
+          this.showAccessDenied("El servidor principal no emitió autorización de sesión.");
+        }
+      }, 4000);
     } else {
-      // Modo Standalone (Si alguien intenta abrir la URL del iframe directamente en el navegador)
+      // Modo Standalone (Si alguien entra a la URL directa)
       const sessionRaw = localStorage.getItem('genapps_session');
       if (sessionRaw) {
-        this.processSession(sessionRaw);
+        this.currentUser = typeof sessionRaw === 'string' ? JSON.parse(sessionRaw) : sessionRaw;
         this.setupThemeToggle();
         this.init();
       } else {
-        this.showAccessDenied();
+        this.showAccessDenied("Debes iniciar sesión en el entorno padre.");
       }
     }
   }
 
-  processSession(sessionRaw) {
-    try {
-      this.currentUser = typeof sessionRaw === 'string' ? JSON.parse(sessionRaw) : sessionRaw;
-      
-      // Renderizamos la "Ficha de Usuario" en el header de Materiales
-      const avatarEl = document.getElementById("user-avatar");
-      const nameEl = document.getElementById("user-name");
-      const roleEl = document.getElementById("user-role");
-
-      if (avatarEl && nameEl && this.currentUser.nombre) {
-        const nameParts = this.currentUser.nombre.split(" ");
-        const init1 = nameParts[0].charAt(0).toUpperCase();
-        const init2 = nameParts.length > 1 ? nameParts[1].charAt(0).toUpperCase() : "";
-        
-        avatarEl.innerText = `${init1}${init2}`;
-        nameEl.innerText = nameParts[0];
-        roleEl.innerText = this.currentUser.rol || "Operador";
-        
-        // Revelar badge
-        const badge = document.getElementById("user-profile-badge");
-        if (badge) {
-          badge.classList.remove("hidden");
-          badge.classList.add("flex");
-        }
-      }
-    } catch (e) {
-      console.error("Error parseando la sesión de GenApps", e);
-      this.showAccessDenied();
-    }
-  }
-
-  showAccessDenied() {
+  showAccessDenied(reason = "") {
     document.body.innerHTML = `
       <div class="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6 text-center transition-colors">
         <div class="bg-white dark:bg-slate-900 p-8 rounded-[2rem] shadow-xl border border-slate-200 dark:border-slate-800 max-w-sm w-full">
@@ -149,6 +145,7 @@ class ScannerStation {
           </div>
           <h1 class="text-2xl font-black text-slate-900 dark:text-white tracking-widest uppercase mb-2">Acceso Restringido</h1>
           <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">Debes iniciar sesión desde el HUB Central para acceder a la Estación de Materiales.</p>
+          <p class="text-xs text-rose-500">${reason}</p>
         </div>
       </div>
     `;
