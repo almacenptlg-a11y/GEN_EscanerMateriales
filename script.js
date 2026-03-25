@@ -54,17 +54,25 @@ class ScannerStation {
     this.checkAuth();
   }
 
-  // ==========================================
+// ==========================================
   // GESTIÓN DE SESIÓN (MICRO-FRONTEND BRIDGE)
   // ==========================================
   checkAuth() {
-    // Detectamos si la app está dentro de un Iframe
+    // Detectamos si la app está encapsulada dentro del Iframe del HUB
     if (window !== window.top) {
       
-      // Creamos el receptor del mensaje del Padre
+      // Temporizador de seguridad: Si el HUB padre no responde en 3 segundos, bloqueamos
+      const timeoutId = setTimeout(() => {
+        console.error("El HUB Central no respondió a la solicitud de sesión.");
+        this.showAccessDenied();
+      }, 3000);
+
+      // Creamos el receptor que espera la respuesta del HUB Padre
       const authListener = (event) => {
         if (event.data && event.data.action === 'SYNC_SESSION') {
-          window.removeEventListener('message', authListener); // Destruimos el listener
+          // Si el padre responde, cancelamos la guillotina del Timeout
+          clearTimeout(timeoutId); 
+          window.removeEventListener('message', authListener); 
           
           if (event.data.session) {
             this.processSession(event.data.session);
@@ -73,10 +81,11 @@ class ScannerStation {
             if (event.data.theme === 'dark') document.documentElement.classList.add('dark');
             else document.documentElement.classList.remove('dark');
             
-            // Arrancamos la aplicación
+            // Arrancamos la interfaz de la aplicación
             this.setupThemeToggle();
             this.init(); 
           } else {
+            // El padre respondió, pero no hay sesión guardada
             this.showAccessDenied();
           }
         }
@@ -84,11 +93,11 @@ class ScannerStation {
       
       window.addEventListener('message', authListener);
       
-      // Lanzamos la petición de sesión al Padre
+      // Lanzamos la petición de auxilio al HUB Padre
       window.parent.postMessage({ action: 'REQUEST_SESSION' }, '*');
 
     } else {
-      // Modo Standalone (Si alguien entra a la URL directa sin Iframe)
+      // Modo Standalone (Si alguien intenta abrir la URL del iframe directamente en el navegador)
       const sessionRaw = localStorage.getItem('genapps_session');
       if (sessionRaw) {
         this.processSession(sessionRaw);
