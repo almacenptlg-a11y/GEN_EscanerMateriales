@@ -25,44 +25,45 @@
 </head>
 <body class="min-h-screen font-inter bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 flex flex-col relative pb-20 md:pb-0 overflow-x-hidden transition-colors duration-300">
 
-  <header class="sticky top-0 z-50 bg-white/90 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800/60 p-4 md:p-6 shadow-sm transition-colors duration-300">
-    <div class="max-w-4xl mx-auto flex flex-col gap-4">
+  <header class="sticky top-0 z-50 bg-white/90 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800/60 p-3 md:p-6 shadow-sm transition-colors duration-300">
+    <div class="max-w-4xl mx-auto flex flex-wrap md:flex-nowrap justify-between items-center gap-y-3 gap-x-2">
       
-      <div class="flex justify-between items-center">
-        <h1 class="text-xl md:text-2xl font-black tracking-tighter text-slate-900 dark:text-white flex items-center gap-2 transition-colors">
-          <svg class="w-6 h-6 text-blue-600 dark:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"></path></svg>
-          HUB <span class="text-blue-600 dark:text-blue-500">MATERIALES</span>
-        </h1>
-        
-        <div class="flex items-center gap-2 md:gap-3">
-          
-          <div id="user-profile-badge" class="hidden md:flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-xl shadow-sm transition-colors">
-            <div class="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-400 font-black text-[10px] uppercase shadow-inner" id="user-avatar">?</div>
-            <div class="flex flex-col">
-              <span class="text-[10px] font-black text-slate-700 dark:text-slate-200 leading-none uppercase tracking-wider" id="user-name">Cargando...</span>
-              <span class="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest" id="user-role">---</span>
-            </div>
+      <h1 class="text-xl md:text-2xl font-black tracking-tighter text-slate-900 dark:text-white flex items-center gap-2 transition-colors shrink-0">
+        <svg class="w-6 h-6 text-blue-600 dark:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"></path></svg>
+        HUB <span class="text-blue-600 dark:text-blue-500">MATERIALES</span>
+      </h1>
+      
+      <div class="flex items-center gap-2 md:gap-3 w-full md:w-auto order-last md:order-none shrink-0">
+        <div id="user-profile-badge" class="hidden md:flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-xl shadow-sm transition-colors shrink-0">
+          <div class="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-400 font-black text-[10px] uppercase shadow-inner" id="user-avatar">?</div>
+          <div class="flex flex-col">
+            <span class="text-[10px] font-black text-slate-700 dark:text-slate-200 leading-none uppercase tracking-wider" id="user-name">Cargando...</span>
+            <span class="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest" id="user-role">---</span>
           </div>
+        </div>
 
-          <div id="system-status" class="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] uppercase tracking-widest font-bold text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 skeleton transition-colors">
-            Iniciando
-          </div>
-          <button id="btn-theme-toggle" class="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 p-2 rounded-xl transition-all shadow-sm group">
-            <svg class="w-4 h-4 hidden dark:block group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-            <svg class="w-4 h-4 block dark:hidden group-hover:-rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
-          </button>
-          <button id="btn-refresh-db" class="hidden md:flex bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-blue-600 dark:text-blue-400 border border-slate-200 dark:border-slate-600 p-2 rounded-xl transition-all shadow-sm group" title="Sincronizar Datos">
-            <svg class="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-          </button>
+        <div id="system-status" class="flex-1 md:flex-none text-center md:text-left px-3 py-2 md:py-1.5 rounded-xl md:rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] uppercase tracking-widest font-bold text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 skeleton transition-colors truncate">
+          Iniciando
         </div>
       </div>
 
+      <div class="flex items-center gap-2 shrink-0 md:order-last">
+        <button id="btn-theme-toggle" class="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 p-2 rounded-xl transition-all shadow-sm group">
+          <svg class="w-4 h-4 hidden dark:block group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+          <svg class="w-4 h-4 block dark:hidden group-hover:-rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+        </button>
+        <button id="btn-refresh-db" class="hidden md:flex bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-blue-600 dark:text-blue-400 border border-slate-200 dark:border-slate-600 p-2 rounded-xl transition-all shadow-sm group" title="Sincronizar Datos">
+          <svg class="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+        </button>
+      </div>
+      
+    </div>
+  </header>
+
   <main class="flex-1 w-full max-w-4xl mx-auto p-4 md:p-6 flex flex-col md:flex-row gap-6">
 
-    <!-- Lector Tab container -->
     <div id="tab-scanner" class="flex-1 flex flex-col gap-6 transition-all duration-300 animate-fade-in w-full">
 
-      <!-- Camera Collapse -->
       <div id="camera-container" class="hidden rounded-2xl overflow-hidden border border-slate-300 dark:border-slate-700 relative bg-black shadow-lg shrink-0">
         <div id="reader" class="w-full"></div>
         <button id="btn-close-camera" class="absolute top-3 right-3 bg-white/90 dark:bg-slate-900/80 backdrop-blur-md hover:bg-rose-500 dark:hover:bg-rose-500 text-rose-500 dark:text-rose-400 hover:text-white border border-slate-200 dark:border-slate-700 p-2.5 rounded-full z-30 transition-all shadow-md">
@@ -72,7 +73,6 @@
         </button>
       </div>
 
-      <!-- Result Canvas -->
       <div id="active-result" class="bg-white/80 dark:bg-slate-900/50 backdrop-blur-md rounded-3xl p-5 md:p-8 border border-white dark:border-slate-800 flex-1 flex flex-col transition-all duration-300 relative shadow-sm dark:shadow-lg focus-visible:outline-none">
         <div class="m-auto text-slate-400 dark:text-slate-600 flex flex-col items-center">
           <svg class="w-16 h-16 md:w-20 md:h-20 mb-4 opacity-50 stroke-[1.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -82,7 +82,6 @@
         </div>
       </div>
 
-      <!-- Mini History Canvas -->
       <div class="bg-white/80 dark:bg-slate-900/30 rounded-3xl border border-white dark:border-slate-800/80 p-5 shrink-0 mt-2 shadow-sm dark:shadow-inner transition-colors">
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-[11px] font-black text-slate-500 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
@@ -152,7 +151,6 @@
 
   </main>
 
-  <!-- Mobile Bottom Nav -->
   <nav class="md:hidden fixed bottom-0 left-0 w-full bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800/80 z-[80] px-4 py-1 pb-safe flex justify-around items-center shadow-[0_-5px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_30px_rgba(0,0,0,0.5)] transition-colors">
     <button id="nav-btn-scanner" class="flex-1 flex flex-col items-center justify-center gap-1.5 p-3 text-blue-600 dark:text-blue-500 transition-colors nav-active">
       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -175,7 +173,6 @@
     </button>
   </nav>
 
-  <!-- Desktop Sidebar Setup -->
   <aside class="hidden md:flex fixed right-0 top-1/4 flex-col gap-4 p-4 z-40">
     <button id="desktop-nav-btn-scanner" class="p-4 bg-blue-600 border border-blue-500 text-white rounded-2xl shadow-lg transition-all hover:pr-8 group relative overflow-hidden flex justify-center items-center">
       <svg class="w-6 h-6 z-10 relative" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -191,7 +188,6 @@
     </button>
   </aside>
 
-  <!-- Image Modal -->
   <div id="image-modal" class="hidden fixed inset-0 z-[100] bg-white/90 dark:bg-slate-950/90 backdrop-blur-lg flex justify-center items-center p-4 opacity-0 transition-opacity duration-300">
     <button id="close-modal" class="absolute top-6 right-6 md:top-10 md:right-10 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:text-slate-900 dark:hover:text-white p-3 rounded-full transition-all z-10 shadow-sm dark:shadow-lg">
       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -203,7 +199,6 @@
     </div>
   </div>
 
-  <!-- Edit Modal -->
   <div id="edit-modal" class="hidden fixed inset-0 z-[110] bg-slate-100/80 dark:bg-slate-950/90 backdrop-blur-md flex justify-center items-center p-3 md:p-6 transition-opacity duration-300 opacity-0">
     <div class="bg-white dark:bg-slate-900/95 p-6 md:p-8 rounded-[2rem] w-full max-w-4xl border border-slate-200 dark:border-slate-700 shadow-2xl max-h-[95vh] flex flex-col gap-6 dark:backdrop-blur-3xl transition-colors">
 
