@@ -591,7 +591,7 @@ class ScannerStation {
     });
   }
 
- setupCamera() {
+setupCamera() {
     const container = document.getElementById("camera-container");
     if (!container || typeof Html5Qrcode === "undefined") return;
 
@@ -602,6 +602,16 @@ class ScannerStation {
     if (btnCamera) {
       btnCamera.addEventListener("click", () => {
         if (!this.isCameraActive) {
+          
+          // ==========================================
+          // NUEVO: ASESINO DE TECLADOS VIRTUALES
+          // ==========================================
+          // 1. Quita el foco de cualquier elemento que lo tenga actualmente
+          if (document.activeElement) document.activeElement.blur();
+          // 2. Aseguramos específicamente que el buscador se desenfoque
+          const input = document.getElementById("scannerInput");
+          if (input) input.blur();
+
           // Activar UI Inmersiva
           container.classList.remove("hidden");
           container.classList.add("flex"); // Forza el centrado
