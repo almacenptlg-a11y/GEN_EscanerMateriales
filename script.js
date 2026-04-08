@@ -802,42 +802,55 @@ const btnScanner = document.getElementById("tab-btn-scanner");
     });
   }
 
+// ==========================================
+  // PIPELINE DE ESCANEO ACTIVO Y PARSEO
   // ==========================================
-  // PIPELINE DE ESCANEO ACTIVO
-  // ==========================================
-  processHybridScan(scanValue) {
+  processHybridScan(rawScanValue) {
     const resultBox = document.getElementById("active-result");
     if (!resultBox) return;
 
     resultBox.classList.remove("scan-success", "scan-error");
     void resultBox.offsetWidth;
 
+    // ==========================================
+    // NUEVO: PARSEO INTELIGENTE DE CÓDIGOS COMPLEJOS
+    // Divide el string usando "U" o "|" y se queda con la primera parte.
+    // Ej: "1002543U30L0..." -> "1002543"
+    // Ej: "1002543|OF012..." -> "1002543"
+    // ==========================================
+    const scanValue = String(rawScanValue).split(/[U|]/)[0].trim();
+
     let isTextSearch = false;
     let product = this.hashData.get(scanValue);
 
+    // Fallback extendido de búsqueda manual
     if (!product) {
       const lowerTerm = scanValue.toLowerCase();
       product = this.rawDataset.find((p) => {
-        const searchString = `${p.desc || ""} ${p.sku || ""} ${
-          p.alu || ""
-        }`.toLowerCase();
+        const searchString = `${p.desc || ""} ${p.sku || ""} ${p.alu || ""}`.toLowerCase();
         return searchString.includes(lowerTerm);
       });
       if (product) isTextSearch = true;
     }
 
+    // Respuesta del Sistema
     if (product) {
       this.beep(800, 100);
       resultBox.classList.add("scan-success");
+      
+      // Enviamos el valor limpio a la UI
       this.renderActiveProduct(product, scanValue, isTextSearch);
       this.addToHistory(product, scanValue, true);
     } else {
       this.beep(300, 300);
       resultBox.classList.add("scan-error");
-      this.renderError(scanValue);
-      this.addToHistory(null, scanValue, false);
+      
+      // UX Táctica: Enviamos el valor CRUDO (rawScanValue) a los paneles de error.
+      // Así el operario puede ver exactamente qué leyó la cámara y auditar el problema.
+      this.renderError(rawScanValue);
+      this.addToHistory(null, rawScanValue, false);
     }
-  }
+  } 
 
   renderActiveProduct(p, scanTerm, isTextSearch) {
     const container = document.getElementById("active-result");
