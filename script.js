@@ -591,59 +591,7 @@ class ScannerStation {
     });
   }
 
-setupCamera() {
-    const container = document.getElementById("camera-container");
-    if (!container || typeof Html5Qrcode === "undefined") return;
 
-    this.html5QrCode = new Html5Qrcode("reader");
-    const btnCamera = document.getElementById("btn-camera");
-    const btnClose = document.getElementById("btn-close-camera");
-
-    if (btnCamera) {
-      btnCamera.addEventListener("click", () => {
-        if (!this.isCameraActive) {
-          
-          // ==========================================
-          // NUEVO: ASESINO DE TECLADOS VIRTUALES
-          // ==========================================
-          // 1. Quita el foco de cualquier elemento que lo tenga actualmente
-          if (document.activeElement) document.activeElement.blur();
-          // 2. Aseguramos específicamente que el buscador se desenfoque
-          const input = document.getElementById("scannerInput");
-          if (input) input.blur();
-
-          // Activar UI Inmersiva
-          container.classList.remove("hidden");
-          container.classList.add("flex"); // Forza el centrado
-          document.body.classList.add("overflow-hidden"); // Bloquea el scroll trasero
-
-          this.html5QrCode
-            .start(
-              { facingMode: "environment" },
-              { fps: 15, qrbox: { width: 280, height: 200 } },
-              (decodedText) => {
-                this.stopCamera();
-                this.processHybridScan(decodedText);
-              },
-              (errorMessage) => {
-                /* Ignorado intencionalmente para no saturar consola */
-              }
-            )
-            .then(() => {
-              this.isCameraActive = true;
-            })
-            .catch((err) => {
-              alert("Permiso de cámara denegado o dispositivo no soportado.");
-              this.stopCamera(); // Limpieza en caso de error
-            });
-        }
-      });
-    }
-
-    if (btnClose) {
-      btnClose.addEventListener("click", () => this.stopCamera());
-    }
-  }
 
   stopCamera() {
     const container = document.getElementById("camera-container");
@@ -667,7 +615,7 @@ setupCamera() {
     }
   }
 
- // ==========================================
+// ==========================================
   // INPUT INTELIGENTE Y NAVEGACIÓN POR TECLADO
   // ==========================================
   setupUI() {
@@ -693,28 +641,23 @@ setupCamera() {
     const setActive = (items) => {
       if (!items || items.length === 0) return;
       
-      // Limpiar estados activos previos
       items.forEach(item => {
         item.classList.remove("bg-blue-50", "dark:bg-slate-800", "border-l-4", "border-blue-500");
       });
 
-      // Lógica de bucle infinito (Arriba a abajo y viceversa)
       if (currentFocus >= items.length) currentFocus = 0;
       if (currentFocus < 0) currentFocus = (items.length - 1);
       
-      // Aplicar estilos de foco al ítem actual
       const activeItem = items[currentFocus];
       activeItem.classList.add("bg-blue-50", "dark:bg-slate-800", "border-l-4", "border-blue-500");
-      
-      // Forzar que el scroll acompañe al usuario
       activeItem.scrollIntoView({ block: "nearest" });
     };
 
     document.addEventListener("click", (e) => {
       if (!input.contains(e.target) && !suggBox.contains(e.target)) {
         suggBox.classList.add("hidden");
-        // Refocus seguro
-        if (e.target.tagName !== "INPUT" && e.target.tagName !== "BUTTON" && !e.target.closest(".glass-panel")) {
+        // Refocus seguro (lo deshabilitamos momentáneamente al abrir la cámara)
+        if (e.target.tagName !== "INPUT" && e.target.tagName !== "BUTTON" && !e.target.closest(".glass-panel") && !this.isCameraActive) {
            input.focus();
         }
       }
@@ -723,17 +666,12 @@ setupCamera() {
     input.addEventListener("input", (e) => {
       const val = e.target.value.trim().toLowerCase();
 
-const btnScanner = document.getElementById("tab-btn-scanner");
+      // NUEVO: Auto-activar pestaña Lector si el usuario escribe y no está activo
+      const btnScanner = document.getElementById("tab-btn-scanner");
       if (btnScanner && !btnScanner.classList.contains("text-blue-600") && !btnScanner.classList.contains("dark:text-blue-400")) {
         btnScanner.click();
       }
 
-      if (val.length < 2) {
-        suggBox.classList.add("hidden");
-        return;
-      }
-      
-      // Reiniciar foco en cada nueva letra escrita
       currentFocus = -1;
 
       if (val.length < 2) {
@@ -765,7 +703,8 @@ const btnScanner = document.getElementById("tab-btn-scanner");
     suggBox.addEventListener("click", (e) => {
       const li = e.target.closest("li");
       if (li && li.dataset.id) {
-        input.value = "";
+        // En lugar de vaciar el input, mostramos el ID encontrado
+        input.value = li.dataset.id; 
         suggBox.classList.add("hidden");
         this.processHybridScan(li.dataset.id);
       }
@@ -773,11 +712,10 @@ const btnScanner = document.getElementById("tab-btn-scanner");
 
     // INTERCEPTOR DE TECLADO
     input.addEventListener("keydown", (e) => {
-      // Obtenemos solo las opciones válidas (evitamos el <li> de "Sin resultados")
       const items = suggBox.querySelectorAll("li[data-id]");
 
       if (e.key === "ArrowDown") {
-        e.preventDefault(); // Evita que el cursor del input se mueva
+        e.preventDefault(); 
         currentFocus++;
         setActive(items);
       } else if (e.key === "ArrowUp") {
@@ -787,38 +725,111 @@ const btnScanner = document.getElementById("tab-btn-scanner");
       } else if (e.key === "Enter") {
         e.preventDefault();
         
-        // Si hay una lista activa y un elemento resaltado
         if (currentFocus > -1 && items.length > 0 && !suggBox.classList.contains("hidden")) {
-          items[currentFocus].click(); // Simula un clic en el elemento activo
+          items[currentFocus].click(); 
         } else {
-          // Fallback nativo: si el usuario presiona Enter de golpe y no eligió nada de la lista
           suggBox.classList.add("hidden");
           const scanValue = input.value.trim();
-          if (scanValue) this.processHybridScan(scanValue);
-          input.value = "";
-          input.focus();
+          if (scanValue) {
+            // HACK DE TECLADO MÓVIL: Engañamos al SO para que cierre el teclado
+            const tempInput = document.createElement('input');
+            tempInput.setAttribute('readonly', 'readonly');
+            tempInput.style.position = 'absolute';
+            tempInput.style.opacity = 0;
+            document.body.appendChild(tempInput);
+            tempInput.focus();
+            setTimeout(() => {
+              tempInput.blur();
+              document.body.removeChild(tempInput);
+            }, 50);
+
+            this.processHybridScan(scanValue);
+          }
+          // Eliminamos: input.value = ""; para que la lectura permanezca
         }
       }
     });
   }
+  
+setupCamera() {
+    const container = document.getElementById("camera-container");
+    if (!container || typeof Html5Qrcode === "undefined") return;
 
-// ==========================================
+    this.html5QrCode = new Html5Qrcode("reader");
+    const btnCamera = document.getElementById("btn-camera");
+    const btnClose = document.getElementById("btn-close-camera");
+
+    if (btnCamera) {
+      btnCamera.addEventListener("click", () => {
+        if (!this.isCameraActive) {
+          
+          // ==========================================
+          // ASESINO DE TECLADOS VIRTUALES (MODO TRAMPA)
+          // ==========================================
+          // Para forzar el cierre del teclado en iOS/Android, creamos un input fantasma
+          const tempInput = document.createElement('input');
+          tempInput.setAttribute('readonly', 'readonly');
+          tempInput.style.position = 'absolute';
+          tempInput.style.opacity = 0;
+          document.body.appendChild(tempInput);
+          tempInput.focus(); // El SO mueve el foco aquí...
+          setTimeout(() => {
+            tempInput.blur(); // ...y luego lo destruimos inmediatamente, cerrando el teclado.
+            document.body.removeChild(tempInput);
+          }, 50);
+
+          // Activar UI Inmersiva
+          container.classList.remove("hidden");
+          container.classList.add("flex"); 
+          document.body.classList.add("overflow-hidden"); 
+
+          this.html5QrCode
+            .start(
+              { facingMode: "environment" },
+              { fps: 15, qrbox: { width: 280, height: 200 } },
+              (decodedText) => {
+                this.stopCamera();
+                // Inyectamos lo que leyó la cámara en el input visualmente
+                const inputEl = document.getElementById("scannerInput");
+                if (inputEl) inputEl.value = decodedText;
+                
+                this.processHybridScan(decodedText);
+              },
+              (errorMessage) => {}
+            )
+            .then(() => {
+              this.isCameraActive = true;
+            })
+            .catch((err) => {
+              alert("Permiso de cámara denegado o dispositivo no soportado.");
+              this.stopCamera(); 
+            });
+        }
+      });
+    }
+
+    if (btnClose) {
+      btnClose.addEventListener("click", () => this.stopCamera());
+    }
+  }
+
+  // ==========================================
   // PIPELINE DE ESCANEO ACTIVO Y PARSEO
   // ==========================================
   processHybridScan(rawScanValue) {
     const resultBox = document.getElementById("active-result");
+    const inputEl = document.getElementById("scannerInput");
+    
     if (!resultBox) return;
 
     resultBox.classList.remove("scan-success", "scan-error");
     void resultBox.offsetWidth;
 
-    // ==========================================
-    // NUEVO: PARSEO INTELIGENTE DE CÓDIGOS COMPLEJOS
-    // Divide el string usando "U" o "|" y se queda con la primera parte.
-    // Ej: "1002543U30L0..." -> "1002543"
-    // Ej: "1002543|OF012..." -> "1002543"
-    // ==========================================
+    // PARSEO: Limpia el código antes de la U o |
     const scanValue = String(rawScanValue).split(/[U|]/)[0].trim();
+    
+    // Actualizamos la barra de búsqueda para que muestre el valor limpio y permanezca ahí
+    if (inputEl) inputEl.value = scanValue;
 
     let isTextSearch = false;
     let product = this.hashData.get(scanValue);
@@ -837,20 +848,15 @@ const btnScanner = document.getElementById("tab-btn-scanner");
     if (product) {
       this.beep(800, 100);
       resultBox.classList.add("scan-success");
-      
-      // Enviamos el valor limpio a la UI
       this.renderActiveProduct(product, scanValue, isTextSearch);
       this.addToHistory(product, scanValue, true);
     } else {
       this.beep(300, 300);
       resultBox.classList.add("scan-error");
-      
-      // UX Táctica: Enviamos el valor CRUDO (rawScanValue) a los paneles de error.
-      // Así el operario puede ver exactamente qué leyó la cámara y auditar el problema.
-      this.renderError(rawScanValue);
+      this.renderError(rawScanValue); // Mostramos el error original
       this.addToHistory(null, rawScanValue, false);
     }
-  } 
+  }
 
   renderActiveProduct(p, scanTerm, isTextSearch) {
     const container = document.getElementById("active-result");
