@@ -591,7 +591,7 @@ class ScannerStation {
     });
   }
 
-  setupCamera() {
+ setupCamera() {
     const container = document.getElementById("camera-container");
     if (!container || typeof Html5Qrcode === "undefined") return;
 
@@ -602,17 +602,21 @@ class ScannerStation {
     if (btnCamera) {
       btnCamera.addEventListener("click", () => {
         if (!this.isCameraActive) {
+          // Activar UI Inmersiva
           container.classList.remove("hidden");
+          container.classList.add("flex"); // Forza el centrado
+          document.body.classList.add("overflow-hidden"); // Bloquea el scroll trasero
+
           this.html5QrCode
             .start(
               { facingMode: "environment" },
-              { fps: 15, qrbox: { width: 300, height: 150 } },
+              { fps: 15, qrbox: { width: 280, height: 200 } },
               (decodedText) => {
                 this.stopCamera();
                 this.processHybridScan(decodedText);
               },
               (errorMessage) => {
-                /* Ignorado intencionalmente */
+                /* Ignorado intencionalmente para no saturar consola */
               }
             )
             .then(() => {
@@ -620,7 +624,7 @@ class ScannerStation {
             })
             .catch((err) => {
               alert("Permiso de cámara denegado o dispositivo no soportado.");
-              container.classList.add("hidden");
+              this.stopCamera(); // Limpieza en caso de error
             });
         }
       });
@@ -632,17 +636,24 @@ class ScannerStation {
   }
 
   stopCamera() {
+    const container = document.getElementById("camera-container");
+    
+    // Limpieza de clases inmersivas inmediatamente para mejor percepción de velocidad
+    if (container) {
+      container.classList.add("hidden");
+      container.classList.remove("flex");
+    }
+    document.body.classList.remove("overflow-hidden");
+
     if (this.isCameraActive && this.html5QrCode) {
       this.html5QrCode
         .stop()
         .then(() => {
-          const container = document.getElementById("camera-container");
-          if (container) container.classList.add("hidden");
           this.isCameraActive = false;
           const input = document.getElementById("scannerInput");
           if (input) input.focus();
         })
-        .catch((err) => console.error(err));
+        .catch((err) => console.error("Error deteniendo cámara:", err));
     }
   }
 
