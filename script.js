@@ -178,16 +178,13 @@ class ScannerStation {
     });
   }
 
-
-  async init(forceRefresh = false) {
+async init(forceRefresh = false) {
     try {
       const status = document.getElementById("system-status");
       const btnRefreshDesktop = document.getElementById("btn-refresh-db");
       const btnRefreshMobile = document.getElementById("btn-refresh-db-nav");
 
-      const allRefreshBtns = [btnRefreshDesktop, btnRefreshMobile].filter(
-        Boolean
-      );
+      const allRefreshBtns = [btnRefreshDesktop, btnRefreshMobile].filter(Boolean);
 
       if (status) {
         status.className =
@@ -197,7 +194,13 @@ class ScannerStation {
           : "Conectando a DB...";
       }
 
-      allRefreshBtns.forEach((btn) => btn.classList.add("animate-spin"));
+      // ==========================================
+      // CORRECCIÓN: Girar SÓLO el icono SVG, no el botón completo
+      // ==========================================
+      allRefreshBtns.forEach((btn) => {
+        const icon = btn.querySelector("svg");
+        if (icon) icon.classList.add("animate-spin");
+      });
 
       const url = forceRefresh ? `${GAS_API_URL}?refresh=true` : GAS_API_URL;
       const response = await fetch(url);
@@ -224,17 +227,30 @@ class ScannerStation {
       this.setupImageModal();
       this.setupEditForm();
 
-      allRefreshBtns.forEach((btn) => btn.classList.remove("animate-spin"));
+      // ==========================================
+      // CORRECCIÓN: Detener el giro del SVG al terminar
+      // ==========================================
+      allRefreshBtns.forEach((btn) => {
+        const icon = btn.querySelector("svg");
+        if (icon) icon.classList.remove("animate-spin");
+      });
+
     } catch (err) {
       this.showSystemError(err);
+      
       const btnRefreshDesktop = document.getElementById("btn-refresh-db");
       const btnRefreshMobile = document.getElementById("btn-refresh-db-nav");
-      [btnRefreshDesktop, btnRefreshMobile]
-        .filter(Boolean)
-        .forEach((btn) => btn.classList.remove("animate-spin"));
+      
+      // ==========================================
+      // CORRECCIÓN: Detener el giro si hay un error
+      // ==========================================
+      [btnRefreshDesktop, btnRefreshMobile].filter(Boolean).forEach((btn) => {
+        const icon = btn.querySelector("svg");
+        if (icon) icon.classList.remove("animate-spin");
+      });
     }
   }
-
+  
   buildDataGraph(dataset) {
     if (!dataset || !Array.isArray(dataset)) return;
 
