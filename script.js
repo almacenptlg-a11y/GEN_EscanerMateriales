@@ -184,7 +184,7 @@ class ScannerStation {
     });
   }
 
-  // ==========================================
+ // ==========================================
   // CONEXIÓN A BASE DE DATOS (Solo Datos, sin UI)
   // ==========================================
   async init(forceRefresh = false) {
@@ -203,11 +203,15 @@ class ScannerStation {
           : "Conectando a DB...";
       }
 
-      // ANIMACIÓN FLUIDA: Desactiva el Hover de CSS y activa el giro de JS
+      // ==========================================
+      // ANIMACIÓN FLUIDA: Quitamos el freno de CSS y ponemos el motor de giro
+      // ==========================================
       allRefreshBtns.forEach((btn) => {
         const icon = btn.querySelector("svg");
         if (icon) {
-          icon.classList.remove("transition-transform", "group-hover:rotate-[360deg]");
+          // 1. Quitamos las transiciones de hover que interfieren
+          icon.classList.remove("transition-transform", "duration-500", "transform", "group-hover:rotate-[360deg]");
+          // 2. Encendemos el giro infinito nativo de Tailwind
           icon.classList.add("animate-spin");
         }
       });
@@ -230,30 +234,33 @@ class ScannerStation {
       this.buildDataGraph(this.rawDataset);
       this.populateAuditTab();
 
-      // FIN ANIMACIÓN: Regresa el icono a su estado de Hover normal
+      // ==========================================
+      // FIN ANIMACIÓN: Apagamos el giro y devolvemos las clases de hover
+      // ==========================================
       allRefreshBtns.forEach((btn) => {
         const icon = btn.querySelector("svg");
         if (icon) {
           icon.classList.remove("animate-spin");
-          icon.classList.add("transition-transform", "group-hover:rotate-[360deg]");
+          icon.classList.add("transition-transform", "duration-500", "transform", "group-hover:rotate-[360deg]");
         }
       });
+      
     } catch (err) {
       this.showSystemError(err);
       
       const btnRefreshDesktop = document.getElementById("btn-refresh-db");
       const btnRefreshMobile = document.getElementById("btn-refresh-db-nav");
       
+      // Detenemos la animación también si ocurre un error
       [btnRefreshDesktop, btnRefreshMobile].filter(Boolean).forEach((btn) => {
         const icon = btn.querySelector("svg");
         if (icon) {
           icon.classList.remove("animate-spin");
-          icon.classList.add("transition-transform", "group-hover:rotate-[360deg]");
+          icon.classList.add("transition-transform", "duration-500", "transform", "group-hover:rotate-[360deg]");
         }
       });
     }
-  }
-  
+  }   
   buildDataGraph(dataset) {
     if (!dataset || !Array.isArray(dataset)) return;
 
