@@ -490,14 +490,29 @@ class ScannerStation {
     }
   }
 
-  populateAuditTab() {
+populateAuditTab() {
     this.renderCollisions();
 
+    // 1. Actualizar contadores internos (Móvil)
     const countCol = document.getElementById("count-colisiones");
     const countGs1 = document.getElementById("count-gs1");
     if (countCol) countCol.innerText = this.duplicates.length;
     if (countGs1) countGs1.innerText = this.gs1Errors.length;
 
+    // ==========================================
+    // 2. NUEVO: RECONEXIÓN DEL CONTADOR MAESTRO (GLOBO ROJO)
+    // ==========================================
+    const totalAlerts = this.duplicates.length + this.gs1Errors.length;
+    document.querySelectorAll("#badge-audit").forEach((badge) => {
+      if (totalAlerts > 0) {
+        badge.innerText = totalAlerts > 99 ? "+99" : totalAlerts;
+        badge.classList.remove("hidden");
+      } else {
+        badge.classList.add("hidden");
+      }
+    });
+
+    // 3. Renderizar lista de infracciones GS1
     const ulGs1 = document.getElementById("audit-gs1");
     if (ulGs1) {
       if (this.gs1Errors.length > 0) {
