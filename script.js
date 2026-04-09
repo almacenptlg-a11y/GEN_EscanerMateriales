@@ -58,25 +58,20 @@ class ScannerStation {
   // GESTIÓN DE SESIÓN (MICRO-FRONTEND BRIDGE)
   // ==========================================
   checkAuth() {
-    // Escuchar activamente los mensajes del HUB Padre (GenApps)
     window.addEventListener('message', (event) => {
       const { type, user, theme } = event.data || {};
       
-      // 1. Sincronización en vivo del tema
       if (type === 'THEME_UPDATE') {
         document.documentElement.classList.toggle('dark', theme === 'dark');
       }
 
-      // 2. Recepción de la Sesión y Arranque del Sistema
       if (type === 'SESSION_SYNC' && user) {
         console.log("HUB Materiales: Sesión recibida del HUB Padre.");
         document.documentElement.classList.toggle('dark', theme === 'dark');
         
-        // Guardamos en estado y en SessionStorage como hace su hermano "Temperaturas"
         this.currentUser = user;
         sessionStorage.setItem('moduloUser', JSON.stringify(user));
         
-        // Actualizamos la UI del Perfil de Usuario
         const avatarEl = document.getElementById("user-avatar");
         const nameEl = document.getElementById("user-name");
         const roleEl = document.getElementById("user-role");
@@ -97,26 +92,21 @@ class ScannerStation {
           }
         }
 
-        // Arrancamos la aplicación ahora que tenemos sesión
-        this.setupThemeToggle();
-        this.init();
+        // ==========================================
+        // ARRANQUE SEGURO: Inicia la UI solo una vez
+        // ==========================================
+        this.bootSystem();
       }
     });
 
-    // 3. Inicio del Ciclo de Vida
-    // Si ya teníamos la sesión guardada temporalmente (por un recargo de iframe)
     const savedUser = sessionStorage.getItem('moduloUser');
     if (savedUser) {
       console.log("HUB Materiales: Sesión recuperada desde caché local.");
       this.currentUser = JSON.parse(savedUser);
-      // El renderizado de avatar se podría extraer a un método, pero por seguridad esperamos la señal del padre.
     }
 
-    // Le decimos al Padre que ya estamos listos para recibir los datos
     if (window !== window.top) {
       window.parent.postMessage({ type: 'MODULO_LISTO' }, '*');
-      
-      // Timeout de seguridad si el padre no responde
       setTimeout(() => {
         if (!this.currentUser) {
           console.error("HUB Materiales: El HUB Central no autorizó la sesión.");
@@ -124,16 +114,33 @@ class ScannerStation {
         }
       }, 4000);
     } else {
-      // Modo Standalone (Si alguien entra a la URL directa)
       const sessionRaw = localStorage.getItem('genapps_session');
       if (sessionRaw) {
         this.currentUser = typeof sessionRaw === 'string' ? JSON.parse(sessionRaw) : sessionRaw;
-        this.setupThemeToggle();
-        this.init();
+        this.bootSystem();
       } else {
         this.showAccessDenied("Debes iniciar sesión en el entorno padre.");
       }
     }
+  }
+
+  // ==========================================
+  // BOOTLOADER: Construye la Interfaz antes de llamar a BD
+  // ==========================================
+  bootSystem() {
+    if (this.isBooted) return; // Previene fugas de memoria si se ejecuta doble
+    
+    this.setupThemeToggle();
+    this.setupUI();
+    this.setupCamera();
+    this.setupTabs();
+    this.setupImageModal();
+    this.setupEditForm();
+    
+    this.isBooted = true;
+    
+    // Una vez conectada toda la UI, hacemos la llamada a la base de datos
+    this.init();
   }
 
   showAccessDenied(reason = "") {
@@ -171,14 +178,16 @@ class ScannerStation {
         newTheme = 'dark';
       }
 
-      // Si estamos en Iframe, avisarle al HUB Principal que cambie de tema también
       if (window !== window.top) {
         window.parent.postMessage({ action: 'TOGGLE_THEME', theme: newTheme }, '*');
       }
     });
   }
 
-async init(forceRefresh = false) {
+  // ==========================================
+  // CONEXIÓN A BASE DE DATOS (Solo Datos, sin UI)
+  // ==========================================
+  async init(forceRefresh = false) {
     try {
       const status = document.getElementById("system-status");
       const btnRefreshDesktop = document.getElementById("btn-refresh-db");
@@ -194,21 +203,20 @@ async init(forceRefresh = false) {
           : "Conectando a DB...";
       }
 
-      // ==========================================
-      // CORRECCIÓN: Girar SÓLO el icono SVG, no el botón completo
-      // ==========================================
+      // ANIMACIÓN FLUIDA: Desactiva el Hover de CSS y activa el giro de JS
       allRefreshBtns.forEach((btn) => {
         const icon = btn.querySelector("svg");
-        if (icon) icon.classList.add("animate-spin");
+        if (icon) {
+          icon.classList.remove("transition-transform", "group-hover:rotate-[360deg]");
+          icon.classList.add("animate-spin");
+        }
       });
 
       const url = forceRefresh ? `${GAS_API_URL}?refresh=true` : GAS_API_URL;
       const response = await fetch(url);
 
       if (!response.ok)
-        throw new Error(
-          `Error de red: ${response.status} ${response.statusText}`
-        );
+        throw new Error(`Error de red: ${response.status} ${response.statusText}`);
 
       const data = await response.json();
       if (data.status === "error")
@@ -220,33 +228,28 @@ async init(forceRefresh = false) {
       this.rawDataset = Array.isArray(data.data) ? data.data : [];
 
       this.buildDataGraph(this.rawDataset);
-      this.setupUI();
-      this.setupCamera();
-      this.setupTabs();
       this.populateAuditTab();
-      this.setupImageModal();
-      this.setupEditForm();
 
-      // ==========================================
-      // CORRECCIÓN: Detener el giro del SVG al terminar
-      // ==========================================
+      // FIN ANIMACIÓN: Regresa el icono a su estado de Hover normal
       allRefreshBtns.forEach((btn) => {
         const icon = btn.querySelector("svg");
-        if (icon) icon.classList.remove("animate-spin");
+        if (icon) {
+          icon.classList.remove("animate-spin");
+          icon.classList.add("transition-transform", "group-hover:rotate-[360deg]");
+        }
       });
-
     } catch (err) {
       this.showSystemError(err);
       
       const btnRefreshDesktop = document.getElementById("btn-refresh-db");
       const btnRefreshMobile = document.getElementById("btn-refresh-db-nav");
       
-      // ==========================================
-      // CORRECCIÓN: Detener el giro si hay un error
-      // ==========================================
       [btnRefreshDesktop, btnRefreshMobile].filter(Boolean).forEach((btn) => {
         const icon = btn.querySelector("svg");
-        if (icon) icon.classList.remove("animate-spin");
+        if (icon) {
+          icon.classList.remove("animate-spin");
+          icon.classList.add("transition-transform", "group-hover:rotate-[360deg]");
+        }
       });
     }
   }
