@@ -665,10 +665,21 @@ populateAuditTab() {
       activeItem.scrollIntoView({ block: "nearest" });
     };
 
+ // ==========================================
+    // AUTO-FOCUS INTELIGENTE CORREGIDO
+    // ==========================================
     document.addEventListener("click", (e) => {
       if (!input.contains(e.target) && !suggBox.contains(e.target)) {
         suggBox.classList.add("hidden");
-        if (e.target.tagName !== "INPUT" && e.target.tagName !== "BUTTON" && !e.target.closest(".glass-panel") && !this.isCameraActive) {
+        
+        // Verificamos si el clic fue en elementos de formulario interactivos
+        const isFormElement = ["INPUT", "BUTTON", "TEXTAREA", "SELECT"].includes(e.target.tagName);
+        // Verificamos si el usuario está interactuando dentro del modal de edición
+        const isInsideModal = e.target.closest("#edit-modal") || e.target.closest(".modal");
+        
+        // Si NO es un elemento de formulario, NO está en el modal, NO es el panel glass, y la cámara está apagada...
+        // Entonces devolvemos el foco al buscador principal.
+        if (!isFormElement && !isInsideModal && !e.target.closest(".glass-panel") && !this.isCameraActive) {
            input.focus();
         }
       }
